@@ -1,0 +1,126 @@
+# Topic Trends in Popular Music
+### *vulnerable words down, defensive words up since 1964*
+
+## Abstract
+
+## Background
+
+Something about the Billboard Year-End Hot 100 singles as a representation of popular interest and thought over time. Something about why this is important.
+
+Since 1958, Billboard has had a finger on the pulse of popular music in the United States. 
+
+## Method
+
+The Billboard Year-End Top 100 Songs used for analysis were scraped from Wikipedia’s entry for each year. The lyrics were then scraped from songlyrics.com (~98%) or manually entered (~2%) from another source, typically metrolyrics.com, if they were not available on songlyrics.com. All data was scraped using the XML package. This data will be read in from wikisongs.csv.
+
+```{r library_and_data, echo=TRUE}
+library("ggplot2")
+library("stringr")
+
+allsongs <- read.csv("/Users/kaylinwalker/Desktop/Fifty Years of Top 100 Singles Song Lyrics/wikisongs.csv", 
+                     stringsAsFactors=FALSE) 
+```
+
+###*Accounting for Increased Word Count and Song Length*  
+One factor that needed to be accounted for was that the average number of words per song has more than doubled since 1964. This is likely caused by an increase in song length – from 2.5 to 4 minutes since the 1960s [[1]](http://www.wired.com/2014/07/why-are-songs-on-the-radio-about-the-same-length/) – as well as a positive trend in the proportion of songs featuring more than one artist. A longer song, especially one with verses from multiple artists, is more likely to cover more topics than a shorter song. Because of this, the analyses were weighted around the mean words per song across all years (280). 
+
+```{r weights, echo=TRUE, warning=FALSE, fig.height=4}
+for (i in 1:length(allsongs$lyrics)) { 
+     allsongs$wordcount[i] <- length(strsplit(allsongs$lyrics[i], " ")[[1]])
+}
+
+countbyyear <- aggregate(wordcount~year,data=allsongs, FUN=mean) 
+
+countbyyear$weights <- mean(countbyyear$wordcount)/countbyyear$wordcount
+
+# make a nice plot of this data
+ggplot(countbyyear, aes(year, wordcount)) + 
+     geom_line(aes(color="persong"),size=1.25) + 
+     labs(title="Avg. Words Per Song\nin Billboard Year-End Hot 100 Singles\n1964-2014", x="",y="") + 
+     coord_cartesian(ylim=c(0,500)) + 
+     theme(legend.position="none", plot.title = element_text(size=14, face="bold", vjust=2), 
+           axis.ticks.y = element_blank(), panel.background = element_rect(fill = 'white'))
+```
+
+The lyrics were then scanned for keywords. If the word appeared in a song’s lyrics at least once, it was counted for that year. The function `show_word_counts(x,z)` takes two parameters: the word(s) to look for and the y-limit for the output plot.
+
+```{r keyword_function, echo=TRUE, warning=FALSE}
+show_word_counts <- function(x,z) { # where x is words to check and z is the y-lim value
+
+     grouping <- data.frame() 
+     
+     # loop through the words provided as a list in x
+     
+     for (w in x) { 
+          
+          thesesongs <- allsongs[grep(w,allsongs$lyrics), ] 
+          count <- aggregate(thesesongs$rank~thesesongs$year, FUN=length)      
+          
+          for (i in 1:length(count[,1])) { # account for missing years with a loop
+               
+               # loop over each row in count
+               
+               for ( y in 1:51 ) { 
+                    
+                    # compare to each row in countbyyear until we find the right year
+                    
+                    if (count[i,1]==countbyyear[y,1]) { 
+                         
+                         # multiply by the appropriate weight
+                         
+                         count$weight[i] <- countbyyear$weights[y]
+                         count$weighted[i] <- countbyyear$weights[y]*count[i,2]
+                         count$check[i] <- count$weighted[i]/count$weight[i]
+                    } 
+               }
+          }
+          
+          count$word <- rep(w, length(count$check))
+          grouping <- rbind(grouping, count)
+     }
+     
+     colnames(grouping) <- c("year", "unweighted", "weight", "weighted", "check", "word")
+     
+# make the plot
+
+ggplot(grouping, aes(year, weighted)) + 
+     geom_line(aes(color=word),size=1.25) + 
+     ylim(0,z) + 
+     scale_color_brewer(palette="Paired") + 
+     labs(title=paste("Keyword appearance in song lyrics\nBillboard Year-End Hot 100 Singles 1964-2014"), x="", y="") + 
+     theme(plot.title = element_text(size=14, face="bold", vjust=2), axis.ticks.y = element_blank(), 
+           axis.ticks.x=element_blank(), panel.background = element_rect(fill = 'white')) 
+}
+```
+
+## Findings
+### *Main effect*
+
+Keywords related to vulnerability showed the greatest decline. Keywords related to partying, explicit language and hookups showed the greasest increase. HERE GOES THE THESIS STATEMENT
+
+```{r show_love, echo=TRUE, warning=FALSE, fig.height=4}
+show_word_counts(c("ass", "hell", "bitch","fuck","damn","nigga","shit"), 25)
+show_word_counts(c("heart", "love"), 100)
+show_word_counts("hate", 25)
+show_word_counts(c("cry","happy","hurt","sad"), 40)
+show_word_counts(c("darling", "dear", "honey"),25)
+show_word_counts(c("hot|hawt","sexy", "shawty|shorty"), 25)
+show_word_counts(c("free", "stuck"), 25)
+show_word_counts(c("drunk","drink","high"), 25)
+```
+
+### *Contributing factors*
+**Billboard Year-End Hot 100 Ranking Policy Changes**  
+General changes in popular song content can be at least partially attributed to the evolution of the ranking method for the Top 100 over time. Billboard stayed relevant by changing its ranking policy [[2]](http://en.wikipedia.org/wiki/Billboard_Hot_100#Hot_100_policy_changes) with the changing methods of discovering and purchasing music.
+
+- 1958-1991: ranking determined by ratio of singles sales and airplay
+- 1991: Billboard begins collecting sales data digitally (using SoundScan) for quicker and more accurate charts
+- 1998: Billboard drops requirement that song must be released as a single to appear on the chart
+- 2005: Digital downloads (iTunes) included 
+- 2012: On-demand streaming services (Spotify, Rhapsody) included 
+- 2013: Video views (YouTube) included 
+
+Consumers now have more say than ever in which songs chart. Prior to the 2005, consumers could impact the charts by purchasing the single or requesting the song on the radio. Now, consumers can view the video, stream the song, download the single or purchase a physical copy to have a say in what’s popular. 
+
+**Music Accessibility and Diversity**  
+The discovery process for new music has expanded from listening to the radio or at the record store to browsing YouTube, listening to online radio or clicking through related artists on Spotify. Music preferences have naturally diversified with more and more music at the ready and sophisticated preference algorithms to help navigate it.

@@ -35,6 +35,12 @@ colnames(allthesongs) <- c("Rank", "Song", "Artist", "Year")
 
 ```{r clean_songs}
 allthesongs$Song <- gsub("[^[:alnum:] ]", "", allthesongs$Song)
+allthesongs$Artist <- gsub("& ", "", allthesongs$Artist) 
+# fix accents
+    allthesongs$Artist <- gsub("è|Ã", "e", allthesongs$Artist) 
+    allthesongs$Artist <- gsub("ý", "y", allthesongs$Artist) 
+    allthesongs$Artist <- gsub("ó|ō", "o", allthesongs$Artist)
+    allthesongs$Artist <- gsub("-", " ", allthesongs$Artist)
 allthesongs$Artist <- gsub("[^[:alnum:] ]", "", allthesongs$Artist)
 ```
 
@@ -43,16 +49,25 @@ for (s in 1:length(allthesongs$Song)) {
      
      lyrics <- "Not set yet."
      
-     artist <- gsub("The ", "", allthesongs$Artist[s])
+     # clean up the artist field to fit in the URL
+         artist <- gsub("The ", "", allthesongs$Artist[s])
+         
+         artist <- strsplit(artist, " featuring | feat | feat. | with | duet | and ")
+         
+         artist <- unlist(artist)[[1]]
      
      URL2 <- paste("http://metrolyrics.com/",allthesongs$Song[s],"-lyrics-",artist,".html",sep="") 
           
-     URL2 <- tolower(gsub(" ","-",URL2)) 
+        URL2 <- tolower(gsub(" ","-",URL2)) 
      
      results <- 12
      
-     tryCatch({ results <- htmlTreeParse(URL2, useInternal=TRUE, isURL=TRUE) },
-     error=function(cond) { message(paste(URL2, "does not exist")) },
+     tryCatch({ 
+         results <- htmlTreeParse(URL2, useInternal=TRUE, isURL=TRUE) 
+         },
+     error=function(cond) { 
+         message(paste(URL2, "does not exist")) 
+        },
      warning=function(cond) { message(paste(URL2, "caused a warning")) },
      finally={ })
      
@@ -62,15 +77,62 @@ for (s in 1:length(allthesongs$Song)) {
           
      } else { 
           lyrics <- xpathSApply(results, "//div[@id='lyrics-body-text']", xmlValue)
-               
-          allthesongs$Lyrics[s] <- lyrics[1] 
+            
+          if (length(lyrics)!=0) { 
+            allthesongs$Lyrics[s] <- lyrics[[1]] 
+          } else {
+              allthesongs$Lyrics[s] <- "None avail."
+          }
      }
 }
 
 ```
+
+```{r fill_missing_lyrics}
+# try to get the missing ones from songlyrics.com
+for (t in 1:length(allthesongs$Song)) {
+    if (allthesongs$Lyrics[t] == "None avail.") {
+        
+        lyrics <- "Not set yet."
+     
+     # clean up the artist field to fit in the URL
+         #artist <- gsub("The ", "", allthesongs$Artist[t])
+         
+        artist <- strsplit(allthesongs$Artist[t], " featuring | feat | feat. | with | duet | and ")
+        artist <- unlist(artist)[[1]]    
+        URL3 <- paste("http://songlyrics.com/",artist,"/",allthesongs$Song[t],"-lyrics",sep="")    
+        URL3 <- tolower(gsub(" ","-",URL3)) 
+
+     results <- 12
+     
+     tryCatch({ 
+         results <- htmlTreeParse(URL3, useInternal=TRUE, isURL=TRUE) 
+         },
+     error=function(cond) { message(paste(URL3, "does not exist")) },
+     warning=function(cond) { message(paste(URL3, "caused a warning")) },
+     finally={ })
+     
+     if (is.numeric(results)) { allthesongs$Lyrics[t] <- "None avail."
+          
+     } else { 
+          lyrics <- xpathSApply(results, "//p[@id='songLyricsDiv']", xmlValue)
+            
+          if (length(lyrics)!=0) {  allthesongs$Lyrics[t] <- lyrics[[1]] 
+                                    
+          } else {
+              allthesongs$Lyrics[t] <- "None avail."
+          }
+     }
+        
+    }
+}
+
+
+```
+
 ```{r clean_lyrics}
 allthesongs$Lyrics <- gsub("\\\n|\\\t"," ",allthesongs$Lyrics)
 allthesongs$Lyrics <- tolower(gsub("[^[:alnum:] ]", "", allthesongs$Lyrics))
-
 ```
+
 

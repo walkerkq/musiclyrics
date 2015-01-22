@@ -1,0 +1,104 @@
+# Topic Trends Over 50 Years of Pop Music
+### *vulnerable words down, defensive words up since 1964*
+```{r setopts, echo=FALSE, warning=FALSE, message=FALSE}
+library("knitr")
+library("XML")
+library("ggplot2")
+library("stringr")
+library("gridExtra")
+opts_chunk$set(echo=FALSE, warning=FALSE, fig.height=4)
+```
+## Background
+
+Pop culture is shaped by, and helps shape, the shared experiences of the community it originates from. Pop culture is a representation of a community's common experiences and preferences, expressed through mediums such as music, movies and literature.
+
+Since 1958, Billboard has had a finger on the pulse of popular music in the United States. 
+
+Using R Studio, I've combined the lyrics from 50 years of Billboard Year-End Hot 100 Songs into one data frame for analysis. 
+
+
+## Method
+
+The songs used for analysis were scraped from Wikipedia’s entry for each year. The lyrics were scraped from [songlyrics.com](http://www.songlyrics.com/) (~98%) or manually entered (~2%) from another source, most frequently [metrolyrics.com](http://www.metrolyrics.com/), if they were not available on [songlyrics.com](http://www.songlyrics.com/). The lyrics were scanned for keywords to calculate the percentage of Billboard Year-End Hot 100 Songs per year that mention the keyword at least once. 
+
+```{r load_data_and_counts, fig.width=10}
+allsongs <- read.csv("wikisongs.csv", stringsAsFactors=FALSE) 
+
+allthesongs <- data.frame() 
+
+for ( i in 1:length(allsongs$lyrics) ) { 
+     
+     y<-strsplit(allsongs[i, ]$lyrics, " ") 
+     
+     allsongs$wordcount[i] <- length(y[[1]])
+     
+}
+
+wordcount <- aggregate(wordcount~year, data=allsongs, FUN=sum)
+```
+
+```{r keyword_function}
+# The function `show_word_counts(x,z)` takes two parameters: the word(s) to look for and the y-limit for the output plot.
+
+show_word_counts <- function(y,z) { # where x is words to check and z is the y-lim value
+
+     alltogether <- data.frame()
+
+     for ( n in 1:length(y) ) { 
+     
+          freq <- sapply(gregexpr(y[n],allsongs$lyrics), 
+                         function(x) 
+                              if(x[[1]]!=-1) { length(x) } else { 0 } )
+          
+          word <- rep(y[n], length(freq))
+          year <- allsongs$year
+          keysongs <- as.data.frame(cbind(year, freq, word, wordcount$wordcount), stringsAsFactors=FALSE)
+          
+          keysongs$V4 <- as.numeric(keysongs$V4)
+          keysongs$freq <- as.numeric(keysongs$freq)
+          
+          combo <- aggregate(freq~year+word, data=keysongs, FUN=sum)
+     
+          combo$rate <- (combo$freq/wordcount$wordcount)*10000
+          
+          alltogether <- rbind(alltogether, combo)
+          alltogether$year <- as.numeric(alltogether$year)
+          alltogether$word <- as.factor(alltogether$word)
+     }
+     
+ggplot(alltogether, aes(year, freq)) + geom_line(aes(color=word), size=1.25) + ylim(0,z) + scale_color_brewer(palette="Paired") + labs(title=paste("Billboard Year-End Hot 100 Singles 1964-2014\nlyrics containing", "Keywords"), x="", y="") + theme(plot.title = element_text(size=20, face="bold", vjust=2), axis.ticks.y = element_blank(), axis.ticks.x=element_blank(), panel.background = element_rect(fill = 'white')) 
+     
+}
+```
+
+## Findings
+### *Main effect*
+
+Keywords related to vulnerability showed the greatest decline. Keywords related to partying, explicit language and hookups showed the greasest increase. HERE GOES THE THESIS STATEMENT
+
+```{r show_love}
+show_word_counts(c("ass", "hell", "bitch","fuck","damn","nigga","shit"), 200)
+show_word_counts(c("heart", "love"), 200)
+show_word_counts("hate", 100)
+show_word_counts(c("cry","happy","hurt","sad"), 100)
+show_word_counts(c("darling", "dear", "honey"),100)
+show_word_counts(c("hot|hawt","sexy", "shawty|shorty"), 150)
+show_word_counts(c("free", "stuck"), 100)
+show_word_counts(c("drunk","drink","high"), 100)
+```
+
+### *Contributing factors*
+**Billboard Year-End Hot 100 Ranking Policy Changes**  
+General changes in popular song content can be at least partially attributed to the evolution of the ranking method for the Top 100 over time. Billboard stayed relevant by changing its ranking policy [[2]](http://en.wikipedia.org/wiki/Billboard_Hot_100#Hot_100_policy_changes) with the changing methods of discovering and purchasing music.
+
+- 1958-1991: ranking determined by ratio of singles sales and airplay
+- 1991: Billboard begins collecting sales data digitally (using SoundScan) for quicker and more accurate charts
+- 1998: Billboard drops requirement that song must be released as a single to appear on the chart
+- 2005: Digital downloads (iTunes) included 
+- 2012: On-demand streaming services (Spotify, Rhapsody) included 
+- 2013: Video views (YouTube) included 
+
+Consumers now have more say than ever in which songs chart. Prior to the 2005, consumers could impact the charts by purchasing the single or requesting the song on the radio. Now, consumers can view the video, stream the song, download the single or purchase a physical copy to have a say in what’s popular. 
+
+**Music Accessibility and Diversity**  
+The discovery process for new music has expanded from listening to the radio or at the record store to browsing YouTube, listening to online radio or clicking through related artists on Spotify. Music preferences have naturally diversified with more and more music at the ready and sophisticated preference algorithms to help navigate it.

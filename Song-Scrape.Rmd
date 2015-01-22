@@ -1,0 +1,61 @@
+Scraping song names and lyrics from the web
+===============================================
+```{r load_packages}
+library("XML")
+library("stringr")
+```
+```{r scrape_songs}
+allthesongs <- data.frame() 
+
+for (i in 1964:2014) { 
+     
+     # create the URL for each year
+     URL <- paste("http://en.wikipedia.org/wiki/Billboard_Year-End_Hot_100_singles_of_",i,sep="")
+     
+     # parse the HTML
+     results <- htmlTreeParse(URL, useInternal=TRUE)
+     
+     # pull out text from each table row
+     billboard_text <- xpathSApply(results, "//table[@class='wikitable sortable']//tr",xmlValue)
+     
+     # split into three pieces (rank, song name and year)
+     split_billboard_text <- str_split_fixed(billboard_text,"\n",3) 
+     
+     # put artist names into a data frame along with the year it is from
+     billboard <- as.data.frame(cbind(split_billboard_text[2:101, ], rep(i,100)), stringsAsFactors=FALSE)
+     
+     # row bind this year's data to all the data
+     allthesongs <- rbind(allthesongs, billboard) 
+     
+}
+
+colnames(allthesongs) <- c("Rank", "Song", "Artist", "Year")
+
+```
+
+```{r clean_songs}
+allthesongs$Song <- gsub("[^[:alnum:] ]", "", allthesongs$Song)
+allthesongs$Artist <- gsub("[^[:alnum:] ]", "", allthesongs$Artist)
+```
+
+```{r scrape_lyrics}
+for (s in 1:length(allthesongs$Song)) {
+     
+     URL2 <- paste("http://metrolyrics.com/",allthesongs$Song[s],"-lyrics-",allthesongs$Artist[s],".html",sep="") 
+          
+     URL2 <- tolower(gsub(" ","-",URL2)) 
+
+     results <- htmlTreeParse(URL2, useInternal=TRUE, isURL=TRUE)
+     
+     lyrics <- xpathSApply(results, "//div[@id='lyrics-body-text']", xmlValue)
+          
+     allthesongs$Lyrics[s] <- lyrics[1] 
+}
+
+```
+```{r clean_lyrics}
+allthesongs$Lyrics <- gsub("\\\n|\\\t"," ",allthesongs$Lyrics)
+allthesongs$Lyrics <- tolower(gsub("[^[:alnum:] ]", "", allthesongs$Lyrics))
+
+```
+

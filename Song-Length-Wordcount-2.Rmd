@@ -1,0 +1,44 @@
+# Song Length Word Count Since 1964
+```{r setopts, echo=FALSE, warning=FALSE, message=FALSE}
+library("knitr")
+library("XML")
+library("ggplot2")
+library("stringr")
+library("gridExtra")
+opts_chunk$set(echo=FALSE, warning=FALSE, fig.height=4)
+```
+
+The songs used for analysis were scraped from Wikipedia’s entry for each year. The lyrics were scraped from [songlyrics.com](http://www.songlyrics.com/) (~98%) or manually entered (~2%) from another source, most frequently [metrolyrics.com](http://www.metrolyrics.com/), if they were not available on [songlyrics.com](http://www.songlyrics.com/). See this post with the R code here.
+
+```{r library_and_data}
+library("ggplot2")
+
+allsongs <- read.csv("wikisongs.csv", stringsAsFactors=FALSE) 
+```
+```{r wordcount}
+for ( i in 1:length(allsongs$lyrics) ) { 
+     allsongs$wordcount[i] <- length( strsplit(allsongs$lyrics[i], " ")[[1]] )
+}
+
+countbyyear <- aggregate(wordcount ~ year, data = allsongs, FUN = mean) 
+```
+
+```{r wordcount_plot}
+ggplot(countbyyear, aes(year, wordcount)) + geom_line(aes(color="persong"),size=1.25) + labs(title="Average Number of Words Per Song\n in Billboard Year-End Hot 100 Songs\n 1964-2014", x="",y="") + coord_cartesian(ylim=c(0,500)) + theme(legend.position="none", plot.title = element_text(size=14, face="bold", vjust=2), axis.ticks.y = element_blank(), panel.background = element_rect(fill = 'white'))
+```
+
+Potential complication - "repeat chorus 3x" or [chorus] in lyrics instead of actually writing it out
+
+The doubling is due to longer songs - from 2.5 to 4 minutes since the 1960s [[1]](http://www.wired.com/2014/07/why-are-songs-on-the-radio-about-the-same-length/).  
+
+And an increased proportion of Year-End Hot 100 songs featuring more than one artist. 
+
+```{r feat_artists}
+feat <- allsongs[grep("[Ff]eaturing|[Ff]eat|[Dd]uet|[Ww]ith", allsongs$artists), ]
+
+featbyyear <- aggregate(artists ~ year, data = feat, FUN = length)
+```
+
+```{r feat_artists_plot}
+ggplot(featbyyear, aes(as.numeric(year), artists)) + geom_line(aes(color="artists"),size=1.25) + labs(title="Songs Featuring 2+ Artists in Billboard Year-End Hot 100 Songs\n 1964-2014", x="",y="") + coord_cartesian(ylim=c(0,100)) + theme(legend.position="none", plot.title = element_text(size=14, face="bold", vjust=2), axis.ticks.y = element_blank(), panel.background = element_rect(fill = 'white'))
+```

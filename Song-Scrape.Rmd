@@ -41,15 +41,30 @@ allthesongs$Artist <- gsub("[^[:alnum:] ]", "", allthesongs$Artist)
 ```{r scrape_lyrics}
 for (s in 1:length(allthesongs$Song)) {
      
-     URL2 <- paste("http://metrolyrics.com/",allthesongs$Song[s],"-lyrics-",allthesongs$Artist[s],".html",sep="") 
+     lyrics <- "Not set yet."
+     
+     artist <- gsub("The ", "", allthesongs$Artist[s])
+     
+     URL2 <- paste("http://metrolyrics.com/",allthesongs$Song[s],"-lyrics-",artist,".html",sep="") 
           
      URL2 <- tolower(gsub(" ","-",URL2)) 
-
-     results <- htmlTreeParse(URL2, useInternal=TRUE, isURL=TRUE)
      
-     lyrics <- xpathSApply(results, "//div[@id='lyrics-body-text']", xmlValue)
+     results <- 12
+     
+     tryCatch({ results <- htmlTreeParse(URL2, useInternal=TRUE, isURL=TRUE) },
+     error=function(cond) { message(paste(URL2, "does not exist")) },
+     warning=function(cond) { message(paste(URL2, "caused a warning")) },
+     finally={ })
+     
+     if (is.numeric(results)) {
           
-     allthesongs$Lyrics[s] <- lyrics[1] 
+          allthesongs$Lyrics[s] <- "None avail."
+          
+     } else { 
+          lyrics <- xpathSApply(results, "//div[@id='lyrics-body-text']", xmlValue)
+               
+          allthesongs$Lyrics[s] <- lyrics[1] 
+     }
 }
 
 ```

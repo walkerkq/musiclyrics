@@ -52,41 +52,49 @@ allthesongs$Artist <- gsub("[^[:alnum:] ]", "", allthesongs$Artist)
 ```
 
 ```{r scrape_lyrics, cach=TRUE}
-for (s in 1:1000)  {
+for (s in 101:1000)  {
 #for (s in 1:length(allthesongs$Song))  {
-     lyrics <- "Not set yet."
-     results <- 12 # arbitrary number
-     
+    
      # clean up the artist field to fit in the URL
           artist <- strsplit(allthesongs$Artist[s], " featuring | feat | feat. | with | duet | and ")
           artist <- unlist(artist)[[1]]
           artist2 <- gsub("The ", "", artist)
                
      # make URLs
-          metroURL <- paste("http://metrolyrics.com/",allthesongs$Song[s],"-lyrics-",artist2,".html",sep="")
-          songURL <- paste("http://songlyrics.com/",artist2,"/",allthesongs$Song[s],"-lyrics",sep="")
-          songnotheURL <- paste("http://songlyrics.com/",artist,"/",allthesongs$Song[s],"-lyrics",sep="")
+        metroURL <- paste("http://metrolyrics.com/",allthesongs$Song[s],"-lyrics-",artist2,".html",sep="")
+        metronotheURL <- paste("http://metrolyrics.com/",allthesongs$Song[s],"-lyrics-",artist,".html",sep="")
+        songURL <- paste("http://songlyrics.com/",artist2,"/",allthesongs$Song[s],"-lyrics",sep="")
+        songnotheURL <- paste("http://songlyrics.com/",artist,"/",allthesongs$Song[s],"-lyrics",sep="")
           
-     URLs <- c(metroURL, songURL, songnotheURL)
-     lyriclocs <- c("//div[@id='lyrics-body-text']", "//p[@id='songLyricsDiv']", "//p[@id='songLyricsDiv']")
+     URLs <- c(metroURL, metronotheURL, songURL, songnotheURL)
+     
+     lyriclocs <- c("//div[@id='lyrics-body-text']", 
+                    "//div[@id='lyrics-body-text']", 
+                    "//p[@id='songLyricsDiv']", 
+                    "//p[@id='songLyricsDiv']")
      
      for (b in 1:length(URLs)) {
-          URL <- tolower(gsub(" ", "-", URLs[b]))
-          
+        allthesongs$Lyrics[s] <- "Not set yet."
+        
+        results <- 12 # arbitrary number
+        
+        URL <- tolower(gsub(" ", "-", URLs[b]))
+        
           tryCatch({ 
                results <- htmlTreeParse(URL, useInternal=TRUE, isURL=TRUE)
                lyrics <- xpathSApply(results, lyriclocs[b], xmlValue) },
-          error = function(x) { message(paste(s, "This ain't workin'")) },
+          error = function(x) { 
+              message(paste(s, "failed")) },
           finally={ 
                if (!is.numeric(results)) { 
                     if (length(lyrics)!=0) { 
                       allthesongs$Lyrics[s] <- lyrics[[1]]
+                      message(paste(s, "success"))
                       break
                     }
-               }
+               } 
           }) # end tryCatch
-     }
-
+     } # end URL for
 } # end for
 ```
 

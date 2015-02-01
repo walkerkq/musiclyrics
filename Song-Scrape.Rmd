@@ -51,10 +51,21 @@ allthesongs$Artist <- gsub("[^[:alnum:] ]", "", allthesongs$Artist)
      allthesongs$Artist <- gsub("Daryl Hall John Oates", "Hall Oates", allthesongs$Artist)
 ```
 
+<<<<<<< Updated upstream
 ```{r scrape_lyrics, cach=TRUE}
 for (s in 101:1000)  {
 #for (s in 1:length(allthesongs$Song))  {
     
+=======
+```{r scrape_lyrics, cache=TRUE, eval=FALSE}
+allthesongs$Lyrics <- ""
+allthesongs$Source <- ""
+for (s in 1:length(allthesongs$Song))  {
+#for (s in 2001:3000) { 
+     lyrics <- "Not set yet."
+     results <- 12 # arbitrary number
+     
+>>>>>>> Stashed changes
      # clean up the artist field to fit in the URL
           artist <- strsplit(allthesongs$Artist[s], " featuring | feat | feat. | with | duet | and ")
           artist <- unlist(artist)[[1]]
@@ -89,7 +100,11 @@ for (s in 101:1000)  {
                if (!is.numeric(results)) { 
                     if (length(lyrics)!=0) { 
                       allthesongs$Lyrics[s] <- lyrics[[1]]
+<<<<<<< Updated upstream
                       message(paste(s, "success"))
+=======
+                      allthesongs$Source[s] <- b
+>>>>>>> Stashed changes
                       break
                     }
                } 
@@ -103,4 +118,12 @@ allthesongs$Lyrics <- gsub("\\\n|\\\t"," ",allthesongs$Lyrics)
 allthesongs$Lyrics <- tolower(gsub("[^[:alnum:] ]", "", allthesongs$Lyrics))
 ```
 
+```{r write_file}
+#blank <- allthesongs$Lyrics[1]
+#allthesongs$Lyrics <- gsub(blank, "", allthesongs$Lyrics)
+
+setwd("/Users/kaylinwalker/R/kw_musiclyrics")
+write.csv(allthesongs, "final_all_songs.csv", row.names=FALSE)
+
+```
 

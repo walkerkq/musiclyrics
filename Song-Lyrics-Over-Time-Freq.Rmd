@@ -24,7 +24,8 @@ The songs used for analysis were scraped from Wikipedia’s entry for each Billb
 About 80% of the lyrics were scraped from [metrolyics.com](http://www.metrolyrics.com/). Of the remaining 20%, about 14% were found and scraped from 
 [songlyrics.com](http://www.songlyrics.com/), but 5.6% (288/5100) were unavailable.
 
-The lyrics were scanned for keyword frequency to show changes over time.
+The lyrics were scanned for keyword frequency to show changes over time. The function calculates the number of times each word was used each year divided by the number of words in each year's 100 songs. This helps make up for missing lyrics, of which there are more in the earlier years, and for the [increasing number of words per song over time.]()
+
 
 ```{r load_data_and_counts, fig.width=10}
 setwd("/Users/kaylinwalker/R/kw_musiclyrics")
@@ -58,13 +59,13 @@ show_word_counts <- function(y,z) { # where y is words to check and z is the y-l
           
           word <- rep(y[n], length(freq))
           year <- allsongs$Year
-          keysongs <- as.data.frame(cbind(year, freq, word, wordcount$wordcount), stringsAsFactors=FALSE)
+          totalwords <- allsongs$wordcount
+          keysongs <- as.data.frame(cbind(year, freq, word, totalwords), stringsAsFactors=FALSE)
           
-          keysongs$V4 <- as.numeric(keysongs$V4)
+          keysongs$totalwords <- as.numeric(keysongs$totalwords)
           keysongs$freq <- as.numeric(keysongs$freq)
           
           combo <- aggregate(freq~year+word, data=keysongs, FUN=sum)
-     
           combo$rate <- (combo$freq/wordcount$wordcount)*10000
           
           alltogether <- rbind(alltogether, combo)
@@ -82,7 +83,7 @@ ggplot(alltogether, aes(year, freq)) + geom_line(aes(color=word), size=1.25) + y
 
 Keywords related to vulnerability showed the greatest decline. Keywords related to partying, explicit language and hookups showed the greasest increase. HERE GOES THE THESIS STATEMENT
 
-```{r show_love}
+```{r show_freq}
 show_word_counts(c("ass", "hell", "bitch","fuck","damn","nigga","shit"), 200)
 show_word_counts(c("heart", "love"), 200)
 show_word_counts("hate", 100)

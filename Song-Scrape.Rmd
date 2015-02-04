@@ -1,9 +1,15 @@
-Scraping song names and lyrics from the web
+Scraping Billboard Year-End Hot 100 Songs and Lyrics from the web
 ===============================================
-```{r load_packages}
+```{r load_packages, echo=FALSE, message=FALSE, warning=FALSE}
 library("XML")
 library("stringr")
+library("knitr")
+opts_chunk$set(eval=FALSE, warning=FALSE, message=FALSE)
 ```
+
+## Scrape songs
+For each year in 1964-2014, create a URL for the Wikipedia Billboard Year-End Hot 100 songs entry. Collect song name, rank and artist name data from eaach of the 100 table rows. Bind them into a neat dataframe (`allthesongs`) with four variables, Rank, Song name, Artist Name and Year, and 5100 rows (51 years of Top 100 songs).
+
 ```{r scrape_songs, cache=TRUE}
 allthesongs <- data.frame() 
 
@@ -33,6 +39,11 @@ colnames(allthesongs) <- c("Rank", "Song", "Artist", "Year")
 
 ```
 
+## Clean up the songs and artists  
+
+Remove any non-alphanumeric characters and handle a few exceptions directly (ampersands, accents, dashes and a few particularly difficult artist names). This will help standardize the entries for use in created URLs when scraping lyrics.
+
+
 ```{r clean_songs}
 allthesongs$Song <- gsub("[^[:alnum:] ]", "", allthesongs$Song)
 allthesongs$Artist <- gsub("& ", "", allthesongs$Artist) 
@@ -51,21 +62,22 @@ allthesongs$Artist <- gsub("[^[:alnum:] ]", "", allthesongs$Artist)
      allthesongs$Artist <- gsub("Daryl Hall John Oates", "Hall Oates", allthesongs$Artist)
 ```
 
-<<<<<<< Updated upstream
-```{r scrape_lyrics, cach=TRUE}
-for (s in 101:1000)  {
-#for (s in 1:length(allthesongs$Song))  {
-    
-=======
+## Scrape Lyrics  
+For each song, create four viable URLs (metrolyrics.com, metrolyics.com without a "The" in the artist name [e.g. Beatles instead of The Beatles],  songlyrics.com and finally songlyrics.com without a "The" in the artist name). Use TryCatch to try to scrape lyrics from the first URL; if unsuccessful, try the second, then the third, and so on. Once lyrics have been found, break the loop and record the successful source number under the variable Source.
+
+About 80% of the lyrics are available from [metrolyics.com](http://www.metrolyrics.com/). Of the remaining 20%, about 14% were found and scraped from 
+[songlyrics.com](http://www.songlyrics.com/); 5.6% (288/5100) were unavailable.
+
+Result: dataframe `allthesongs` with 5100 rows and 7 columns: Rank, Song name, Artist, Year, Lyrics and Source.
+
 ```{r scrape_lyrics, cache=TRUE, eval=FALSE}
 allthesongs$Lyrics <- ""
 allthesongs$Source <- ""
+
 for (s in 1:length(allthesongs$Song))  {
-#for (s in 2001:3000) { 
      lyrics <- "Not set yet."
      results <- 12 # arbitrary number
      
->>>>>>> Stashed changes
      # clean up the artist field to fit in the URL
           artist <- strsplit(allthesongs$Artist[s], " featuring | feat | feat. | with | duet | and ")
           artist <- unlist(artist)[[1]]
@@ -100,11 +112,8 @@ for (s in 1:length(allthesongs$Song))  {
                if (!is.numeric(results)) { 
                     if (length(lyrics)!=0) { 
                       allthesongs$Lyrics[s] <- lyrics[[1]]
-<<<<<<< Updated upstream
                       message(paste(s, "success"))
-=======
                       allthesongs$Source[s] <- b
->>>>>>> Stashed changes
                       break
                     }
                } 
@@ -113,17 +122,17 @@ for (s in 1:length(allthesongs$Song))  {
 } # end for
 ```
 
+## Clean up the lyrics
+
 ```{r clean_lyrics}
 allthesongs$Lyrics <- gsub("\\\n|\\\t"," ",allthesongs$Lyrics)
 allthesongs$Lyrics <- tolower(gsub("[^[:alnum:] ]", "", allthesongs$Lyrics))
 ```
 
-```{r write_file}
-#blank <- allthesongs$Lyrics[1]
-#allthesongs$Lyrics <- gsub(blank, "", allthesongs$Lyrics)
+## Write the file  
 
+```{r write_file}
 setwd("/Users/kaylinwalker/R/kw_musiclyrics")
 write.csv(allthesongs, "final_all_songs.csv", row.names=FALSE)
-
 ```
 

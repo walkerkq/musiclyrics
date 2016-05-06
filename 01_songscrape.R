@@ -87,9 +87,10 @@ allthesongs$Lyrics <- tolower(gsub("[^[:alnum:] ]", "", allthesongs$Lyrics))
 missing <- round(length(allthesongs[allthesongs$Lyrics=="not set yet", 1])/length(allthesongs[,1]), 4)*100
 ## 3.67% of lyrics are missing
 allthesongs$Lyrics <- gsub("not set yet", "NA", allthesongs$Lyrics)
+allthesongs$Lyrics <- gsub("we are not in a position to display these lyrics due to licensing restrictions sorry for the inconvenience", "NA", allthesongs$Lyrics)
 
 # setwd("/Users/kaylinwalker/R/kw_musiclyrics")
-# write.csv(all2, "billboard_lyrics_1964-2015.csv", row.names=FALSE)
+# write.csv(allthesongs, "billboard_lyrics_1964-2015.csv", row.names=FALSE)
 # allthesongs <- read.csv("billboard_lyrics_1964-2015.csv", stringsAsFactors=FALSE)
 
 

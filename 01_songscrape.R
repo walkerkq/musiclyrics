@@ -32,7 +32,7 @@ allthesongs$Lyrics <- ""
 allthesongs$Source <- ""
 
 ################### SCRAPE THE LYRICS ###################
-### source: multiple. metorlyics.com, songlyrics.com
+### source: multiple. 1=metorlyics.com, 3=songlyrics.com, 5=lyricsmode.com
 for (s in 1:length(allthesongs$Song))  {
      
      lyrics <- "Not set yet."
@@ -42,26 +42,27 @@ for (s in 1:length(allthesongs$Song))  {
      artist <- strsplit(allthesongs$Artist[s], " featuring | feat | feat. | with | duet | and ")
      artist <- unlist(artist)[[1]]
      artist2 <- gsub("the ", "", artist)
+     firstletter <- substring(artist2, 1, 1)
      
      # make URLs
      metroURL <- paste("http://metrolyrics.com/",allthesongs$Song[s],"-lyrics-",artist2,".html",sep="")
-     metronotheURL <- paste("http://metrolyrics.com/",allthesongs$Song[s],"-lyrics-",artist,".html",sep="")
      songURL <- paste("http://songlyrics.com/",artist2,"/",allthesongs$Song[s],"-lyrics",sep="")
-     songnotheURL <- paste("http://songlyrics.com/",artist,"/",allthesongs$Song[s],"-lyrics",sep="")
+     modeURL <- paste("http://www.lyricsmode.com/lyrics/", firstletter, "/", artist2, "/", allthesongs$Song[s], ".html", sep="")
      
-     URLs <- c(metroURL, metronotheURL, songURL, songnotheURL)
+     
+     URLs <- c(metroURL, songURL, modeURL)
      
      lyriclocs <- c("//div[@id='lyrics-body-text']", 
-                    "//div[@id='lyrics-body-text']", 
                     "//p[@id='songLyricsDiv']", 
-                    "//p[@id='songLyricsDiv']")
+                    "//p[@id='lyrics_text']")
      
      for (b in 1:length(URLs)) {
           allthesongs$Lyrics[s] <- "Not set yet."
           
           results <- 12 # arbitrary number
           
-          URL <- tolower(gsub(" ", "-", URLs[b]))
+          if(b!=3) URL <- tolower(gsub(" ", "-", URLs[b]))
+          if(b==3) URL <- URLs[b]
           
           tryCatch({ 
                results <- htmlTreeParse(URL, useInternal=TRUE, isURL=TRUE)
@@ -84,9 +85,12 @@ for (s in 1:length(allthesongs$Song))  {
 allthesongs$Lyrics <- gsub("\\\n|\\\t"," ",allthesongs$Lyrics)
 allthesongs$Lyrics <- tolower(gsub("[^[:alnum:] ]", "", allthesongs$Lyrics))
 missing <- round(length(allthesongs[allthesongs$Lyrics=="not set yet", 1])/length(allthesongs[,1]), 4)*100
-## 6.41% of lyrics are missing
+## 3.67% of lyrics are missing
 allthesongs$Lyrics <- gsub("not set yet", "NA", allthesongs$Lyrics)
 
-# write.csv(allthesongs, "songs_and_lyrics.csv", row.names=FALSE)
-# allthesongs <- read.csv("songs_and_lyrics.csv", stringsAsFactors=FALSE)
+# setwd("/Users/kaylinwalker/R/kw_musiclyrics")
+# write.csv(all2, "billboard_lyrics_1964-2015.csv", row.names=FALSE)
+# allthesongs <- read.csv("billboard_lyrics_1964-2015.csv", stringsAsFactors=FALSE)
+
+
 

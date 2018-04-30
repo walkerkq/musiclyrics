@@ -7,4 +7,4 @@ I used the xml and RCurl packages to scrape song and artist names from each Wiki
   
 The dataset features 5100 observations with the features rank (1-100), song, artist, year, lyrics, and source. The artist feature is fairly standardized thanks to Wikipedia, but there is still quite a bit of noise when it comes to artist collaborations (Justin Timberlake featuring Timbaland, for example). If there were any errors in the lyrics that were scraped, such as spelling errors or derivatives like "nite" instead of "night," they haven't been corrected.  
 
-Full analysis can be found [here](http://kaylinwalker.com/50-years-of-pop-music/).
+Full analysis can be found [here](http://kaylinpavlik.com/50-years-of-pop-music/).
